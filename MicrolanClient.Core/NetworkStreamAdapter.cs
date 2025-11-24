@@ -1,6 +1,6 @@
 ﻿using System.Net.Sockets;
 
-namespace MicrolanClient
+namespace MicrolanClient.Core
 {
     public class NetworkStreamAdapter : IStream
     {

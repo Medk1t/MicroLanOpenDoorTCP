@@ -1,7 +1,7 @@
 ﻿using System.Net;
 using System.Net.Sockets;
 
-namespace MicrolanClient
+namespace MicrolanClient.Core
 {
     public class TcpClientAdapter : ITcpClient
     {

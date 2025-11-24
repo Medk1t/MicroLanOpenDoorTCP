@@ -1,4 +1,4 @@
-﻿namespace MicrolanClient
+﻿namespace MicrolanClient.Core
 {
     public interface IStream : IDisposable
     {

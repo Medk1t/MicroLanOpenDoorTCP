@@ -1,6 +1,6 @@
 ﻿using System.Net;
 
-namespace MicrolanClient
+namespace MicrolanClient.Core
 {
     public interface ITcpClient : IDisposable
     {

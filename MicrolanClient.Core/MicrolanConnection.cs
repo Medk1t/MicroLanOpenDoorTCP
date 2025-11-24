@@ -1,6 +1,6 @@
 ﻿using System.Net;
 
-namespace MicrolanClient
+namespace MicrolanClient.Core
 {
     public class MicrolanConnection : IDisposable
     {
@@ -36,7 +36,6 @@ namespace MicrolanClient
                 throw new ObjectDisposedException(nameof(MicrolanConnection));
             }
         }
-
 
         public async Task<byte[]> SendCommandAsync(byte[] command)
         {

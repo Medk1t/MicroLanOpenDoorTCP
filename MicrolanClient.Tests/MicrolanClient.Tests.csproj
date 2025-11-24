@@ -22,7 +22,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\MicrolanClient\MicrolanClient.csproj" />
+    <ProjectReference Include="..\MicrolanClient.Core\MicrolanClient.Core.csproj" />
   </ItemGroup>
 
   <ItemGroup>
