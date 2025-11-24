@@ -1,31 +1,30 @@
 ﻿using System.Net;
-using System.Net.Sockets;
 
 namespace MicrolanClient
 {
-    internal class MicrolanConnection : IDisposable
+    public class MicrolanConnection : IDisposable
     {
         public IPAddress IP { get; }
         public int Port { get; }
-        private readonly TcpClient _tcpClient;
-        private NetworkStream? _stream;
+        private readonly ITcpClient _tcpClient;
+        private IStream? _stream;
         private bool _disposed = false;
 
-        public MicrolanConnection(string ip, int port = 10900)
+        public MicrolanConnection(string ip, int port = 10900, ITcpClient? tcpClient = null)
         {
             IP = IPAddress.Parse(ip);
             Port = port;
-            _tcpClient = new TcpClient();
+            _tcpClient = tcpClient ?? new TcpClientAdapter();
         }
 
-        public static async Task<MicrolanConnection> CreateAsync(string ip, int port = 10900)
+        public static async Task<MicrolanConnection> CreateAsync(string ip, int port = 10900, ITcpClient? tcpClient = null)
         {
-            var connection = new MicrolanConnection(ip, port);
+            var connection = new MicrolanConnection(ip, port, tcpClient);
             await connection.ConnectAsync();
             return connection;
         }
 
-        private async Task ConnectAsync()
+        public async Task ConnectAsync()
         {
             if (!_disposed)
             {
@@ -38,16 +37,30 @@ namespace MicrolanClient
             }
         }
 
-        public static async Task<byte[]> SendCommandAsync(NetworkStream stream, byte[] command)
+
+        public async Task<byte[]> SendCommandAsync(byte[] command)
         {
-            var responseBuf = new byte[512];
-            await stream.WriteAsync(command);
-            int bytesRead = await stream.ReadAsync(responseBuf);
-            if (bytesRead == 0)
+            if (!_disposed)
             {
-                throw new IOException("Connection lost: Could not receive response");
+                if (_stream == null)
+                {
+                    throw new InvalidOperationException("Connection not established.");
+                }
+
+                // Отправка команды
+                await _stream.WriteAsync(command, 0, command.Length);
+                await _stream.FlushAsync();  // Используем FlushAsync, если добавили в IStream
+
+                // Чтение ответа (предполагаем 4 байта, как в оригинале)
+                byte[] response = new byte[4];
+                int bytesRead = await _stream.ReadAsync(response, 0, response.Length);
+                if (bytesRead == 0)
+                {
+                    throw new IOException("Connection lost: Could not receive response");
+                }
+                return response;
             }
-            return responseBuf[..bytesRead];
+            throw new ObjectDisposedException(nameof(MicrolanConnection));
         }
 
         public async Task<byte[]> OpenDoorAsync()
@@ -61,26 +74,7 @@ namespace MicrolanClient
 
                 byte[] openDoorComand = [0x42, 0x3, 0x1, 0x0, 0x1, 0x17];
 
-                return await SendCommandAsync(_stream, openDoorComand);
-            }
-            throw new ObjectDisposedException(nameof(MicrolanConnection));
-        }
-
-        public async Task<byte[]> ExecuteAsync(byte[] command)
-        {
-            if (!_disposed)
-            {
-                if (_stream != null)
-                {
-                    return await SendCommandAsync(_stream, command);
-                }
-                else
-                {
-                    using var tcpClient = new TcpClient();
-                    await tcpClient.ConnectAsync(IP, Port);
-                    using var netStream = tcpClient.GetStream();
-                    return await SendCommandAsync(netStream, command);
-                }
+                return await SendCommandAsync(openDoorComand);
             }
             throw new ObjectDisposedException(nameof(MicrolanConnection));
         }
